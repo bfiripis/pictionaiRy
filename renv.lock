@@ -9,6 +9,17 @@
     ]
   },
   "Packages": {
+    "PKI": {
+      "Package": "PKI",
+      "Version": "0.1-15",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Requirements": [
+        "R",
+        "base64enc"
+      ],
+      "Hash": "ec0620ffbe13af5d017a92077085965e"
+    },
     "R6": {
       "Package": "R6",
       "Version": "2.6.1",
@@ -30,6 +41,17 @@
         "utils"
       ],
       "Hash": "8842cfd023a523ec9e011b9e4aab50ef"
+    },
+    "RcppTOML": {
+      "Package": "RcppTOML",
+      "Version": "0.2.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "Rcpp"
+      ],
+      "Hash": "23eeca7d3c7d63fc7449108c0a66178c"
     },
     "askpass": {
       "Package": "askpass",
@@ -250,6 +272,17 @@
       ],
       "Hash": "c20959a9442c0e3adb1e8d3809c5d1f7"
     },
+    "jose": {
+      "Package": "jose",
+      "Version": "2.0.0",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Requirements": [
+        "jsonlite",
+        "openssl"
+      ],
+      "Hash": "448a3007b878ff1f301d9520a5a8008a"
+    },
     "jquerylib": {
       "Package": "jquerylib",
       "Version": "0.1.4",
@@ -345,6 +378,18 @@
       ],
       "Hash": "627d6993db1043703c0b084fa432f21f"
     },
+    "packrat": {
+      "Package": "packrat",
+      "Version": "0.9.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "tools",
+        "utils"
+      ],
+      "Hash": "d3289899c84c65def1a783ea0a9ea0eb"
+    },
     "pillar": {
       "Package": "pillar",
       "Version": "1.11.1",
@@ -434,6 +479,39 @@
       ],
       "Hash": "f88151fb9ca15e72dc351deb1328716e"
     },
+    "rsconnect": {
+      "Package": "rsconnect",
+      "Version": "1.8.0",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Requirements": [
+        "PKI",
+        "R",
+        "cli",
+        "curl",
+        "digest",
+        "httr2",
+        "jsonlite",
+        "lifecycle",
+        "openssl",
+        "packrat",
+        "renv",
+        "rlang",
+        "rstudioapi",
+        "snowflakeauth",
+        "tools",
+        "utils",
+        "yaml"
+      ],
+      "Hash": "4e531f62ba72657712f59383e58209c9"
+    },
+    "rstudioapi": {
+      "Package": "rstudioapi",
+      "Version": "0.18.0",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Hash": "d6e1ecf8e39b6d53c8acde372b2f92d1"
+    },
     "sass": {
       "Package": "sass",
       "Version": "0.4.10",
@@ -498,6 +576,22 @@
         "shiny"
       ],
       "Hash": "e8f592e8c0a636fef0c253c8196d78c7"
+    },
+    "snowflakeauth": {
+      "Package": "snowflakeauth",
+      "Version": "0.2.2",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Requirements": [
+        "RcppTOML",
+        "cli",
+        "curl",
+        "jose",
+        "jsonlite",
+        "openssl",
+        "rlang"
+      ],
+      "Hash": "84561ae3fe96a5f8c7ee81db5492304d"
     },
     "sourcetools": {
       "Package": "sourcetools",
@@ -629,6 +723,13 @@
         "utils"
       ],
       "Hash": "93b19c064862d315a828c7170d806453"
+    },
+    "yaml": {
+      "Package": "yaml",
+      "Version": "2.3.12",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Hash": "7cd77cb32abd9220d744307e9fc94ffb"
     }
   }
 }
