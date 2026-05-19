@@ -12,6 +12,12 @@ library(dplyr)
 library(glue)
 library(purrr)
 library(stringr)
+library(htmltools)
+
+
+# Security helpers --------------------------------------------------------
+
+safe_text <- function(x) htmlEscape(x)
 
 
 # App theme ---------------------------------------------------------------
@@ -286,6 +292,8 @@ root_ui <- function() {
 # SweetAlert popup builder ------------------------------------------------
 
 build_popup_html <- function(word, team, timer_secs, skips_left) {
+  word <- safe_text(word)
+  team <- safe_text(team)
   timer_id      <- "pict-timer"
   circumference <- round(2 * pi * 46, 1)
   skip_disabled <- if (skips_left <= 0) "disabled" else ""
@@ -610,4 +618,3 @@ stepper_input <- function(id, label, value, min, max, step = 1) {
 ", id, id, id, id, value)))
   )
 }
-

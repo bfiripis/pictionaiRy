@@ -254,12 +254,8 @@ function(input, output, session) {
     skips  <- input$skips_allowed
     skips_remaining(skips)
     
-    message("DEBUG word:", word, " team:", team, " timer:", timer, " skips:", skips)
-    
     # Build SweetAlert HTML content
     popup_html <- build_popup_html(word, team, timer, skips)
-    
-    message("DEBUG popup_html: ", popup_html)   # ADD HERE
     
     # Mark word as seen (used) immediately
     mark_word_used(word, thm, skipped = FALSE)
