@@ -3,7 +3,7 @@
 function(input, output, session) {
   
   # Reactive states
-
+  
   # Word bank returned by Claude (data.frame: theme, word, used, skipped)
   word_bank <- reactiveVal(NULL)
   
@@ -40,6 +40,7 @@ function(input, output, session) {
   observeEvent(input$add_theme, {
     req(input$custom_theme)
     ct <- str_trim(input$custom_theme)
+    ct <- gsub("'", "", ct)  # strip single quotes to prevent JS injection
     if (nchar(ct) > 0 && !ct %in% all_themes()) {
       extra_themes(c(extra_themes(), ct))
       # Update picker
@@ -77,7 +78,7 @@ function(input, output, session) {
     app_status("waiting")
     word_bank(NULL)
     
-    n    <- input$n_per_category %||% 10L
+    n    <- min(input$n_per_category %||% 10L, 30L)
     diff <- input$difficulty
     thm  <- input$themes
     
@@ -104,7 +105,7 @@ function(input, output, session) {
   observeEvent(input$start_game, {
     req(word_bank())
     
-    n <- input$n_teams %||% 2
+    n <- min(input$n_teams %||% 2, 6L)
     names_vec <- vapply(seq_len(n), function(i) {
       v <- input[[paste0("team_name_", i)]]
       if (is.null(v) || nchar(str_trim(v)) == 0) paste("Team", i) else str_trim(v)
@@ -220,7 +221,8 @@ function(input, output, session) {
         id       = paste0("theme_btn_", make.names(thm)),
         disabled = if (disabled) NA else NULL,
         onclick  = if (!disabled) {
-          sprintf("Shiny.setInputValue('clicked_theme', '%s', {priority: 'event'})", thm)
+          thm_js <- gsub("'", "\\\\'", thm)
+          sprintf("Shiny.setInputValue('clicked_theme', '%s', {priority: 'event'})", thm_js)
         } else NULL,
         span(thm),
         span(
@@ -254,8 +256,12 @@ function(input, output, session) {
     skips  <- input$skips_allowed
     skips_remaining(skips)
     
+    message("DEBUG word:", word, " team:", team, " timer:", timer, " skips:", skips)
+    
     # Build SweetAlert HTML content
     popup_html <- build_popup_html(word, team, timer, skips)
+    
+    message("DEBUG popup_html: ", popup_html)   # ADD HERE
     
     # Mark word as seen (used) immediately
     mark_word_used(word, thm, skipped = FALSE)
