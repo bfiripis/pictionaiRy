@@ -1,6 +1,7 @@
-# =============================================================================
-# global.R  –  Pictionary AI Generator
-# =============================================================================
+# global.R
+
+
+# Import libraries --------------------------------------------------------
 
 library(shiny)
 library(bslib)
@@ -12,9 +13,9 @@ library(glue)
 library(purrr)
 library(stringr)
 
-# -----------------------------------------------------------------------------
-# App-wide theme  (pre-existing — do not modify)
-# -----------------------------------------------------------------------------
+
+# App theme ---------------------------------------------------------------
+
 app_theme <- function() {
   bs_theme(
     preset     = "lux",
@@ -23,9 +24,9 @@ app_theme <- function() {
   )
 }
 
-# -----------------------------------------------------------------------------
-# HTML head extras  (pre-existing — do not modify)
-# -----------------------------------------------------------------------------
+
+# UI components -----------------------------------------------------------
+
 app_html_head <- function() {
   tags$head(
     tags$link(rel = "stylesheet", type = "text/css", href = "css/pictionaiRy.css"),
@@ -33,9 +34,6 @@ app_html_head <- function() {
   )
 }
 
-# -----------------------------------------------------------------------------
-# App header  (pre-existing — do not modify)
-# -----------------------------------------------------------------------------
 app_header <- function() {
   div(
     class = "app-header d-flex align-items-center gap-4",
@@ -52,118 +50,8 @@ app_header <- function() {
   )
 }
 
-# -----------------------------------------------------------------------------
-# Claude API helper
-# -----------------------------------------------------------------------------
-CLAUDE_MODEL   <- "claude-sonnet-4-6"
-CLAUDE_MAX_TOK <- 2000
-
-call_claude <- function(prompt_text, api_key = Sys.getenv("ANTHROPIC_API_KEY")) {
-  message("DEBUG prompt: [", prompt_text, "] length:", length(prompt_text))  # ADD THIS
-  
-  if (is.null(api_key) || nchar(api_key) == 0) stop("ANTHROPIC_API_KEY not set.")
-  
-  resp <- request("https://api.anthropic.com/v1/messages") |>
-    req_headers(
-      "x-api-key"         = api_key,
-      "anthropic-version" = "2023-06-01",
-      "content-type"      = "application/json"
-    ) |>
-    req_body_json(list(
-      model      = CLAUDE_MODEL,
-      max_tokens = CLAUDE_MAX_TOK,
-      messages   = list(list(role = "user", content = prompt_text))
-    )) |>
-    req_error(is_error = \(r) FALSE) |>
-    req_perform()
-  
-  parsed <- resp_body_json(resp)
-  if (!is.null(parsed$error)) stop(parsed$error$message)
-  parsed$content[[1]]$text
-}
-
-# -----------------------------------------------------------------------------
-# Build the Claude prompt from setup options
-# -----------------------------------------------------------------------------
-build_claude_prompt <- function(themes, n_per_category, difficulty) {
-  themes_str    <- paste(themes, collapse = ", ")
-  difficulty_lc <- tolower(difficulty)
-  
-  glue(
-    "You are helping run a Pictionary game. Generate a structured list of words/concepts \\
-for players to draw.",
-    "\n\n",
-    "SETTINGS:\n",
-    "- Themes: {themes_str}\n",
-    "- Number of words per theme: {n_per_category}\n",
-    "- Difficulty: {difficulty_lc}\n\n",
-    "INSTRUCTIONS:\n",
-    "Return ONLY a CSV block with exactly two columns: `theme` and `word`.\n",
-    "Do not include any explanation, markdown fences, or extra text — just the raw CSV.\n",
-    "The first row must be the header: theme,word\n",
-    "Each subsequent row: one theme name (matching exactly one of the themes listed above), \\
-a comma, then one word or short phrase (2-4 words max) appropriate for Pictionary at \\
-{difficulty_lc} difficulty.\n",
-    "Generate exactly {n_per_category} words for EACH theme listed.\n",
-    "Example row: Animals,Elephant\n",
-    "Only output the CSV. Nothing else."
-  )
-}
-
-# -----------------------------------------------------------------------------
-# Parse Claude CSV response → data.frame
-# -----------------------------------------------------------------------------
-parse_claude_csv <- function(raw_text) {
-  # Strip any accidental markdown fences
-  clean <- raw_text |>
-    str_remove_all("```[a-z]*\n?") |>
-    str_trim()
-  
-  df <- tryCatch(
-    read.csv(text = clean, stringsAsFactors = FALSE, strip.white = TRUE),
-    error = function(e) NULL
-  )
-  
-  if (is.null(df) || !all(c("theme", "word") %in% names(df))) {
-    stop("Could not parse Claude's response as a valid CSV with columns 'theme' and 'word'.")
-  }
-  
-  df |>
-    mutate(
-      theme  = str_trim(theme),
-      word   = str_trim(word),
-      used   = FALSE,
-      skipped = FALSE
-    )
-}
-
-# -----------------------------------------------------------------------------
-# Difficulty choices
-# -----------------------------------------------------------------------------
-DIFFICULTY_CHOICES <- c("Easy", "Medium", "Hard", "Expert")
-
-# Default themes (user can customise)
-DEFAULT_THEMES <- c("Famous Moustaches", "Things That Are Hairy", "Things That Look Like Moustaches", "They Call It What?! (Aussie Slang)")
-
-# -----------------------------------------------------------------------------
-# Null-coalescing helper
-# -----------------------------------------------------------------------------
-`%||%` <- function(a, b) if (!is.null(a)) a else b
-
-# -----------------------------------------------------------------------------
-# Build SweetAlert popup HTML (word reveal + timer + controls)
-# Defined here (global.R) so it is available before server.R is sourced,
-# and so that server.R contains ONLY the bare server function expression.
-# -----------------------------------------------------------------------------
-# =============================================================================
-# UI MODULE FUNCTIONS
-# Defined here (global.R) so they are available to BOTH ui.R and server.R.
-# server.R cannot see functions defined in ui.R; global.R is the shared scope.
-# =============================================================================
-
-# -----------------------------------------------------------------------------
 # Waiting / pre-generation placeholder
-# -----------------------------------------------------------------------------
+
 waiting_ui <- function() {
   div(
     class = "text-center py-5 text-muted",
@@ -176,9 +64,9 @@ waiting_ui <- function() {
   )
 }
 
-# -----------------------------------------------------------------------------
+
 # Status bar
-# -----------------------------------------------------------------------------
+
 status_bar_ui <- function() {
   card(
     class = "mb-3",
@@ -200,9 +88,9 @@ status_bar_ui <- function() {
   )
 }
 
-# -----------------------------------------------------------------------------
+
 # Scoreboard card
-# -----------------------------------------------------------------------------
+
 scoreboard_ui <- function() {
   card(
     full_screen = FALSE,
@@ -216,9 +104,9 @@ scoreboard_ui <- function() {
   )
 }
 
-# -----------------------------------------------------------------------------
+
 # Theme selection card (main game area)
-# -----------------------------------------------------------------------------
+
 theme_selection_ui <- function() {
   card(
     card_header(
@@ -238,9 +126,8 @@ theme_selection_ui <- function() {
   )
 }
 
-# -----------------------------------------------------------------------------
-# Main dashboard layout
-# -----------------------------------------------------------------------------
+# Dashboard layout --------------------------------------------------------
+
 dashboard_ui <- function() {
   tagList(
     status_bar_ui(),
@@ -252,84 +139,23 @@ dashboard_ui <- function() {
   )
 }
 
-# -----------------------------------------------------------------------------
-# Helper: stepper input  (- | value | +)
-# id        : the numericInput inputId that holds the value
-# label     : visible label text
-# value     : starting value
-# min / max : bounds enforced in JS
-# step      : increment per button press
-# -----------------------------------------------------------------------------
-stepper_input <- function(id, label, value, min, max, step = 1) {
-  tagList(
-    tags$label(`for` = id, class = "form-label mb-1 small fw-semibold", label),
-    div(
-      class = "input-group input-group-sm mb-3",
-      tags$button(
-        class            = "btn btn-outline-secondary pict-stepper-btn",
-        type             = "button",
-        `data-target`    = id,
-        `data-direction` = "down",
-        `data-step`      = step,
-        `data-min`       = min,
-        `data-max`       = max,
-        "−"
-      ),
-      div(
-        style = "flex:1;",
-        tags$input(
-          id    = id,
-          class = "form-control text-center shiny-bound-input",
-          type  = "number",
-          value = value,
-          min   = min,
-          max   = max,
-          step  = step
-        )
-      ),
-      tags$button(
-        class            = "btn btn-outline-secondary pict-stepper-btn",
-        type             = "button",
-        `data-target`    = id,
-        `data-direction` = "up",
-        `data-step`      = step,
-        `data-min`       = min,
-        `data-max`       = max,
-        "＋"
-      )
-    ),
-    tags$script(HTML(sprintf("
-  (function() {
-    document.querySelectorAll('.pict-stepper-btn[data-target=\"%s\"]').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        var inp  = document.getElementById('%s');
-        var dir  = btn.getAttribute('data-direction');
-        var step = parseFloat(btn.getAttribute('data-step'));
-        var mn   = parseFloat(btn.getAttribute('data-min'));
-        var mx   = parseFloat(btn.getAttribute('data-max'));
-        var cur  = parseFloat(inp.value) || 0;
-        var nxt  = dir === 'up' ? Math.min(cur + step, mx) : Math.max(cur - step, mn);
-        inp.value = nxt;
-        inp.dispatchEvent(new Event('change'));
-        Shiny.setInputValue('%s', nxt, {priority: 'event'});
-      });
-    });
 
-    // Push initial value only after Shiny is fully connected
-    $(document).one('shiny:connected', function() {
-      Shiny.setInputValue('%s', %s);
-    });
-  })();
-", id, id, id, id, value)))
-  )
-}
 
-# -----------------------------------------------------------------------------
+# Sidebar -----------------------------------------------------------------
+
+# Difficulty setting options
+DIFFICULTY_CHOICES <- c("Easy", "Medium", "Hard", "Expert")
+
+
+# Default themes (user can customise)
+
+DEFAULT_THEMES <- c("Famous Moustaches", "Things That Are Hairy", "Things That Look Like Moustaches", "They Call It What?! (Aussie Slang)")
+
+
 # Sidebar – Word-generation options
-# -----------------------------------------------------------------------------
+
 sidebar_word_gen_ui <- function() {
   tagList(
-    # Collapsible section header — bold, no emoji
     tags$div(
       class = "pict-section-label",
       tags$a(
@@ -398,12 +224,11 @@ sidebar_word_gen_ui <- function() {
   )
 }
 
-# -----------------------------------------------------------------------------
-# Sidebar – Game options
-# -----------------------------------------------------------------------------
+
+# Sidebar – Game options 
+
 sidebar_game_options_ui <- function() {
   tagList(
-    # Collapsible section header — bold, no emoji
     tags$div(
       class = "pict-section-label mt-3",
       tags$a(
@@ -437,9 +262,10 @@ sidebar_game_options_ui <- function() {
   )
 }
 
-# -----------------------------------------------------------------------------
-# Full sidebar (both sections combined)
-# -----------------------------------------------------------------------------
+
+
+# Sidebar composition
+
 sidebar_panel_ui <- function() {
   sidebar(
     width = 320,
@@ -448,16 +274,16 @@ sidebar_panel_ui <- function() {
   )
 }
 
-# -----------------------------------------------------------------------------
+
 # Root UI output (main panel placeholder)
-# -----------------------------------------------------------------------------
+
 root_ui <- function() {
   uiOutput("main_panel")
 }
 
-# =============================================================================
-# SweetAlert popup builder
-# =============================================================================
+
+
+# SweetAlert popup builder ------------------------------------------------
 
 build_popup_html <- function(word, team, timer_secs, skips_left) {
   timer_id      <- "pict-timer"
@@ -630,3 +456,158 @@ build_popup_html <- function(word, team, timer_secs, skips_left) {
 </script>
 ')
 }
+
+
+# Claude helpers ----------------------------------------------------------
+
+# Claude API caller
+
+CLAUDE_MODEL   <- "claude-sonnet-4-6"
+CLAUDE_MAX_TOK <- 2000
+
+call_claude <- function(prompt_text, api_key = Sys.getenv("ANTHROPIC_API_KEY")) {
+  
+  if (is.null(api_key) || nchar(api_key) == 0) stop("ANTHROPIC_API_KEY not set.")
+  
+  resp <- request("https://api.anthropic.com/v1/messages") |>
+    req_headers(
+      "x-api-key"         = api_key,
+      "anthropic-version" = "2023-06-01",
+      "content-type"      = "application/json"
+    ) |>
+    req_body_json(list(
+      model      = CLAUDE_MODEL,
+      max_tokens = CLAUDE_MAX_TOK,
+      messages   = list(list(role = "user", content = prompt_text))
+    )) |>
+    req_error(is_error = \(r) FALSE) |>
+    req_perform()
+  
+  parsed <- resp_body_json(resp)
+  if (!is.null(parsed$error)) stop(parsed$error$message)
+  parsed$content[[1]]$text
+}
+
+# Concat Claude prompt from setup options + template text
+build_claude_prompt <- function(themes, n_per_category, difficulty) {
+  themes_str    <- paste(themes, collapse = ", ")
+  difficulty_lc <- tolower(difficulty)
+  
+  glue(
+    "You are helping run a Pictionary game. Generate a structured list of words/concepts \\
+for players to draw.",
+    "\n\n",
+    "SETTINGS:\n",
+    "- Themes: {themes_str}\n",
+    "- Number of words per theme: {n_per_category}\n",
+    "- Difficulty: {difficulty_lc}\n\n",
+    "INSTRUCTIONS:\n",
+    "Return ONLY a CSV block with exactly two columns: `theme` and `word`.\n",
+    "Do not include any explanation, markdown fences, or extra text — just the raw CSV.\n",
+    "The first row must be the header: theme,word\n",
+    "Each subsequent row: one theme name (matching exactly one of the themes listed above), \\
+a comma, then one word or short phrase (2-4 words max) appropriate for Pictionary at \\
+{difficulty_lc} difficulty.\n",
+    "Generate exactly {n_per_category} words for EACH theme listed.\n",
+    "Example row: Animals,Elephant\n",
+    "Only output the CSV. Nothing else."
+  )
+}
+
+
+# Claude CSV response -> data.frame parser
+
+parse_claude_csv <- function(raw_text) {
+  # Strip any accidental markdown fences
+  clean <- raw_text |>
+    str_remove_all("```[a-z]*\n?") |>
+    str_trim()
+  
+  df <- tryCatch(
+    read.csv(text = clean, stringsAsFactors = FALSE, strip.white = TRUE),
+    error = function(e) NULL
+  )
+  
+  if (is.null(df) || !all(c("theme", "word") %in% names(df))) {
+    stop("Could not parse Claude's response as a valid CSV with columns 'theme' and 'word'.")
+  }
+  
+  df |>
+    mutate(
+      theme  = str_trim(theme),
+      word   = str_trim(word),
+      used   = FALSE,
+      skipped = FALSE
+    )
+}
+
+# Helpers -----------------------------------------------------------------
+
+# Null-coalescing helper
+`%||%` <- function(a, b) if (!is.null(a)) a else b
+
+# Stepper input  (- | value | +)
+stepper_input <- function(id, label, value, min, max, step = 1) {
+  tagList(
+    tags$label(`for` = id, class = "form-label mb-1 small fw-semibold", label),
+    div(
+      class = "input-group input-group-sm mb-3",
+      tags$button(
+        class            = "btn btn-outline-secondary pict-stepper-btn",
+        type             = "button",
+        `data-target`    = id,
+        `data-direction` = "down",
+        `data-step`      = step,
+        `data-min`       = min,
+        `data-max`       = max,
+        "−"
+      ),
+      div(
+        style = "flex:1;",
+        tags$input(
+          id    = id,
+          class = "form-control text-center shiny-bound-input",
+          type  = "number",
+          value = value,
+          min   = min,
+          max   = max,
+          step  = step
+        )
+      ),
+      tags$button(
+        class            = "btn btn-outline-secondary pict-stepper-btn",
+        type             = "button",
+        `data-target`    = id,
+        `data-direction` = "up",
+        `data-step`      = step,
+        `data-min`       = min,
+        `data-max`       = max,
+        "＋"
+      )
+    ),
+    tags$script(HTML(sprintf("
+  (function() {
+    document.querySelectorAll('.pict-stepper-btn[data-target=\"%s\"]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var inp  = document.getElementById('%s');
+        var dir  = btn.getAttribute('data-direction');
+        var step = parseFloat(btn.getAttribute('data-step'));
+        var mn   = parseFloat(btn.getAttribute('data-min'));
+        var mx   = parseFloat(btn.getAttribute('data-max'));
+        var cur  = parseFloat(inp.value) || 0;
+        var nxt  = dir === 'up' ? Math.min(cur + step, mx) : Math.max(cur - step, mn);
+        inp.value = nxt;
+        inp.dispatchEvent(new Event('change'));
+        Shiny.setInputValue('%s', nxt, {priority: 'event'});
+      });
+    });
+
+    // Push initial value only after Shiny is fully connected
+    $(document).one('shiny:connected', function() {
+      Shiny.setInputValue('%s', %s);
+    });
+  })();
+", id, id, id, id, value)))
+  )
+}
+

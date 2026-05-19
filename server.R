@@ -1,13 +1,9 @@
-# =============================================================================
 # server.R  –  Pictionary AI Generator
-# =============================================================================
 
 function(input, output, session) {
   
-  # ---------------------------------------------------------------------------
-  # Reactive state
-  # ---------------------------------------------------------------------------
-  
+  # Reactive states
+
   # Word bank returned by Claude (data.frame: theme, word, used, skipped)
   word_bank <- reactiveVal(NULL)
   
@@ -40,9 +36,7 @@ function(input, output, session) {
     c(DEFAULT_THEMES, extra_themes())
   })
   
-  # ---------------------------------------------------------------------------
   # Add custom theme
-  # ---------------------------------------------------------------------------
   observeEvent(input$add_theme, {
     req(input$custom_theme)
     ct <- str_trim(input$custom_theme)
@@ -59,9 +53,7 @@ function(input, output, session) {
     }
   })
   
-  # ---------------------------------------------------------------------------
   # Dynamic team name inputs
-  # ---------------------------------------------------------------------------
   output$team_name_inputs <- renderUI({
     n <- input$n_teams %||% 2
     inputs <- lapply(seq_len(n), function(i) {
@@ -79,9 +71,7 @@ function(input, output, session) {
     )
   })
   
-  # ---------------------------------------------------------------------------
   # Generate words via Claude
-  # ---------------------------------------------------------------------------
   observeEvent(input$generate_words, {
     req(input$themes)
     app_status("waiting")
@@ -110,9 +100,7 @@ function(input, output, session) {
     })
   })
   
-  # ---------------------------------------------------------------------------
   # Start game
-  # ---------------------------------------------------------------------------
   observeEvent(input$start_game, {
     req(word_bank())
     
@@ -132,9 +120,7 @@ function(input, output, session) {
     showNotification("🚀 Game started! Good luck 🎨", type = "message", duration = 4)
   })
   
-  # ---------------------------------------------------------------------------
   # Helpers: remaining words per theme
-  # ---------------------------------------------------------------------------
   remaining_for_theme <- function(theme_name) {
     wb <- word_bank()
     if (is.null(wb)) return(0L)
@@ -181,9 +167,7 @@ function(input, output, session) {
     tn[min(idx, length(tn))]
   })
   
-  # ---------------------------------------------------------------------------
   # Status pill UI
-  # ---------------------------------------------------------------------------
   output$status_pill_ui <- renderUI({
     s <- app_status()
     switch(s,
@@ -193,9 +177,7 @@ function(input, output, session) {
     )
   })
   
-  # ---------------------------------------------------------------------------
   # Word count summary
-  # ---------------------------------------------------------------------------
   output$word_count_summary <- renderUI({
     wb <- word_bank()
     if (is.null(wb)) return(NULL)
@@ -210,9 +192,7 @@ function(input, output, session) {
     )
   })
   
-  # ---------------------------------------------------------------------------
   # Current team badge
-  # ---------------------------------------------------------------------------
   output$current_team_badge <- renderUI({
     if (!game_active()) return(NULL)
     span(
@@ -221,9 +201,7 @@ function(input, output, session) {
     )
   })
   
-  # ---------------------------------------------------------------------------
   # Theme buttons (main game area)
-  # ---------------------------------------------------------------------------
   output$theme_buttons_ui <- renderUI({
     wb <- word_bank()
     
@@ -258,9 +236,7 @@ function(input, output, session) {
     )
   })
   
-  # ---------------------------------------------------------------------------
   # SweetAlert turn flow
-  # ---------------------------------------------------------------------------
   observeEvent(input$clicked_theme, {
     req(game_active())
     thm  <- input$clicked_theme
@@ -306,7 +282,7 @@ function(input, output, session) {
     session$userData$current_theme <- thm
   })
   
-  # ---- Skip button handler ------------------------------------------------
+  # Skip button handler
   observeEvent(input$skip_word, {
     sk <- skips_remaining()
     if (sk <= 0) {
@@ -352,7 +328,7 @@ function(input, output, session) {
     )
   })
   
-  # ---- Got it: Yes ---------------------------------------------------------
+  # Got it: Yes
   observeEvent(input$got_it_yes, {
     team <- current_team()
     add_score(team, 1L)
@@ -364,16 +340,14 @@ function(input, output, session) {
     )
   })
   
-  # ---- Got it: No ----------------------------------------------------------
+  # Got it: No
   observeEvent(input$got_it_no, {
     closeSweetAlert(session)
     advance_team()
     showNotification("😓 Better luck next time !", type = "warning", duration = 3)
   })
   
-  # ---------------------------------------------------------------------------
   # Scoreboard
-  # ---------------------------------------------------------------------------
   output$scoreboard_content <- renderUI({
     sc  <- scores()
     tn  <- team_names()
@@ -388,7 +362,7 @@ function(input, output, session) {
       ))
     }
     
-    # Sort by score desc for display (but keep turn marker by current_team_idx)
+    # Sort by score desc for display (keeping turn marker by current_team_idx)
     rows <- lapply(seq_along(tn), function(i) {
       nm        <- tn[i]
       pts       <- sc[[nm]] %||% 0
@@ -417,9 +391,7 @@ function(input, output, session) {
     )
   })
   
-  # ---------------------------------------------------------------------------
   # Main panel switcher
-  # ---------------------------------------------------------------------------
   output$main_panel <- renderUI({
     dashboard_ui()
   })
